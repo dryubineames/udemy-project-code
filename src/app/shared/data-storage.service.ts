@@ -6,27 +6,38 @@ import { RecipeService } from '../recipes/recipe.service';
 import { Recipe } from '../recipes/recipe.model';
 import { AuthService } from '../auth/auth.service';
 
+import {AppComponent} from '../app.component';
+import {FirebaseConfigService} from './firebase-config-service';
+
+
+
+
 @Injectable()
 export class DataStorageService {
+   recipeFile = '/recipes.json?auth=';
+
   constructor(private http: Http,
               private recipeService: RecipeService,
-              private authService: AuthService) {
+              private authService: AuthService,
+              private firebaseConfigService: FirebaseConfigService) {
   }
 
-  storeRecipes() {
-    const token = this.authService.getToken();
 
-    return this.http.put('https://ng-recipe-book.firebaseio.com/recipes.json?auth=' + token, this.recipeService.getRecipes());
+
+  storeRecipes() {
+
+    return this.http.post(this.firebaseConfigService.getFirebaseConfig().databaseURL + this.recipeFile +
+      this.authService.getToken(), this.recipeService.getRecipes());
   }
 
   getRecipes() {
     const token = this.authService.getToken();
 
-    this.http.get('https://ng-recipe-book.firebaseio.com/recipes.json?auth=' + token)
+    this.http.get(this.firebaseConfigService.getFirebaseConfig().databaseURL + this.recipeFile + token)
       .map(
         (response: Response) => {
           const recipes: Recipe[] = response.json();
-          for (let recipe of recipes) {
+          for (const recipe of recipes) {
             if (!recipe['ingredients']) {
               recipe['ingredients'] = [];
             }
